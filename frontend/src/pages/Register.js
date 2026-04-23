@@ -1,25 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../api';
-import '../styles/Auth.css';
+import '../styles/Auth.css'; // Make sure this CSS file exists
 
 function Register() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-  });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,23 +17,17 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await register(
-        formData.name,
-        formData.email,
-        formData.password
-      );
-
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem(
-        'user',
-        JSON.stringify(response.data.user)
-      );
-
-      navigate('/dashboard');
+      // Calls the register function from your api.js
+      const response = await register(name, email, password);
+      
+      if (response.data.success) {
+        // Your backend returns a token upon successful registration
+        // We save it and instantly log the user in to the dashboard
+        localStorage.setItem('token', response.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Registration failed'
-      );
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -53,54 +37,51 @@ function Register() {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Register</h2>
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="name">Name</label>
+          <div className="form-group" style={{ marginBottom: '15px' }}>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
-              placeholder="Enter your full name"
+              style={{ width: '100%', padding: '10px' }}
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+          <div className="form-group" style={{ marginBottom: '15px' }}>
             <input
               type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your email"
+              style={{ width: '100%', padding: '10px' }}
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className="form-group" style={{ marginBottom: '20px' }}>
             <input
               type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter password (min 6 characters)"
+              style={{ width: '100%', padding: '10px' }}
             />
           </div>
-
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? 'Registering...' : 'Register'}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="btn-primary"
+            style={{ width: '100%', padding: '10px', cursor: 'pointer' }}
+          >
+            {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
-
-        <p className="auth-link">
-          Already have an account? <a href="/login">Login here</a>
+        
+        <p style={{ marginTop: '15px', textAlign: 'center' }}>
+          Already have an account? <Link to="/login">Login here</Link>
         </p>
       </div>
     </div>
