@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Changed the hardcoded localhost to your LIVE Render Backend URL
-const API_URL = 'https://lost-and-found-management-system-awda.onrender.com/api';
+// Uses environment variable, falling back to the Render Backend URL
+const API_URL = process.env.REACT_APP_API_URL || 'https://lost-and-found-management-system-awda.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -15,6 +15,8 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // Auth APIs

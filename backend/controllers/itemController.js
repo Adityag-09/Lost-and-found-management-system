@@ -72,7 +72,11 @@ exports.updateItem = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to update this entry' });
     }
 
-    item = await Item.findByIdAndUpdate(req.params.id, req.body, {
+    // Ensure a user cannot reassign the item to another user
+    const updateData = { ...req.body };
+    delete updateData.userId;
+
+    item = await Item.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
@@ -114,11 +118,14 @@ exports.searchItems = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide a search term' });
     }
 
+    // Escape regex characters to prevent database errors or ReDoS attacks
+    const safeName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     // Search in both itemName and description, case-insensitive
     const items = await Item.find({
       $or: [
-        { itemName: { $regex: name, $options: 'i' } },
-        { description: { $regex: name, $options: 'i' } }
+        { itemName: { $regex: safeName, $options: 'i' } },
+        { description: { $regex: safeName, $options: 'i' } }
       ]
     }).populate('userId', 'name email');
 

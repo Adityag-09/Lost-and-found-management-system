@@ -14,7 +14,6 @@ const corsOptions = {
     origin: "*", // Allows any frontend URL to connect
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
-    credentials: true,
     optionsSuccessStatus: 204
 };
 
