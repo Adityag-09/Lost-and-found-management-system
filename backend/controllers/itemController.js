@@ -52,6 +52,9 @@ exports.createItem = async (req, res) => {
       userId: req.user.id, // Assuming auth middleware attaches user to req
     });
 
+    // Populate the userId field before returning
+    await item.populate('userId', 'name email');
+
     res.status(201).json({ success: true, message: 'Item created successfully', data: item });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Error creating item' });
@@ -79,7 +82,7 @@ exports.updateItem = async (req, res) => {
     item = await Item.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
-    });
+    }).populate('userId', 'name email');
 
     res.status(200).json({ success: true, data: item });
   } catch (error) {

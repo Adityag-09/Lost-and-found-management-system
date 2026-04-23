@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllItems } from '../api';
+import { getAllItems, deleteItem, updateItem } from '../api';
 import '../styles/Dashboard.css';
 
 function ItemList({ items, onItemsUpdate, currentUserId }) {
@@ -8,33 +8,28 @@ function ItemList({ items, onItemsUpdate, currentUserId }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    const fetchItems = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllItems();
+        onItemsUpdate(response.data.data);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllItems();
-      onItemsUpdate(response.data.data);
-    } catch (error) {
-      console.error('Error fetching items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async (id) => {
     if (
       window.confirm('Are you sure you want to delete this item?')
     ) {
       try {
-        const token = localStorage.getItem('token');
-        await fetch(`http://localhost:5000/api/items/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        await deleteItem(id);
         onItemsUpdate(items.filter((item) => item._id !== id));
       } catch (error) {
         console.error('Error deleting item:', error);
@@ -50,25 +45,12 @@ function ItemList({ items, onItemsUpdate, currentUserId }) {
 
   const handleSaveEdit = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/items/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(editData),
-      });
-
-      if (response.ok) {
-        const updatedItem = await response.json();
-        onItemsUpdate(
-          items.map((item) =>
-            item._id === id ? updatedItem.data : item
-          )
-        );
-        setEditingId(null);
-      }
+      const response = await updateItem(id, editData);
+      const updatedItem = response.data;
+      onItemsUpdate(
+        items.map((item) => (item._id === id ? updatedItem.data : item))
+      );
+      setEditingId(null);
     } catch (error) {
       console.error('Error updating item:', error);
       alert('Failed to update item');
