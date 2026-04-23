@@ -1,4 +1,4 @@
-// 1. CRITICAL DNS FIX (Bypasses Windows/Hotspot DNS issues)
+// 1. CRITICAL DNS FIX
 const dns = require('node:dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
@@ -9,16 +9,24 @@ const cors = require('cors');
 
 const app = express();
 
-// 2. UPDATED CORS (Ensures Frontend can communicate with Backend on Render)
-app.use(cors({
-    origin: "*", // Allows access from any origin (Essential for your Vercel/Render frontend)
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
-}));
+// 2. EXPLICIT CORS & PREFLIGHT HANDLING (The "Preflight Fix")
+const corsOptions = {
+    origin: "*", // Allows any frontend URL to connect
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+// Apply CORS to all routes
+app.use(cors(corsOptions));
+
+// Specifically handle the OPTIONS (Preflight) request for all routes
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-// 3. JWT SECRET CHECK (Prevents server crash if .env is missing)
+// 3. JWT SECRET CHECK
 if (!process.env.JWT_SECRET) {
     console.warn("⚠️ WARNING: JWT_SECRET is not defined in .env file!");
 }
@@ -32,9 +40,7 @@ const connectDB = async () => {
     });
     console.log('✅ MongoDB connected successfully!');
   } catch (err) {
-    console.error('❌ MongoDB connection error:');
-    console.error(err.message);
-    console.log('👉 TIP: Ensure your IP is whitelisted (0.0.0.0/0) in Atlas.');
+    console.error('❌ MongoDB connection error:', err.message);
   }
 };
 
@@ -45,12 +51,7 @@ app.get('/', (req, res) => {
   res.status(200).json({ 
     success: true, 
     message: 'Lost & Found API is Live',
-    developed_by: 'Aditya Kanaujiya',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      items: '/api/items'
-    }
+    developed_by: 'Aditya Kanaujiya'
   });
 });
 
@@ -60,23 +61,15 @@ app.use('/api/items', require('./routes/items'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is healthy and running' });
+  res.status(200).json({ success: true, message: 'Server is healthy' });
 });
 
-// Error handling middleware
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
   });
 });
 
